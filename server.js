@@ -164,6 +164,42 @@ IMPORTANT: Write "summary" and all "detail" fields in Arabic script (العرب�
 });
 
 // ================================================================
+//  HELPER — Extract text/caption from image (Groq Vision)
+// ================================================================
+app.post('/api/extract-text', async (req, res) => {
+  try {
+    const { image, mime } = req.body;
+    if (!image) return res.status(400).json({ error: 'No image' });
+
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${mime || 'image/jpeg'};base64,${image}` } },
+            { type: 'text', text: 'Extract ALL visible text from this image. Return ONLY the extracted text, nothing else. If there is a caption, headline, or claim visible, return that. Keep the original language.' }
+          ]
+        }],
+        temperature: 0.1,
+        max_tokens: 512
+      })
+    });
+
+    const data = await resp.json();
+    const text = data.choices?.[0]?.message?.content?.trim() || '';
+    res.json({ text });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ================================================================
 //  TOOL 3 — TruthLens Text Detector (Groq / LLaMA 3.3 70B)
 //  Detects AI-generated, human-written, or manipulated text
 // ================================================================

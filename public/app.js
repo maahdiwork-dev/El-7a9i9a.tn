@@ -183,12 +183,31 @@ function loadConsistency(file) {
   hideError('consist-error');
 
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const dataUrl = e.target.result;
     const base64 = dataUrl.split(',')[1];
     const mime = file.type;
     consistencyImage = { base64, mime };
     document.getElementById('consist-thumb').src = dataUrl;
+
+    // Auto-extract text from image
+    const captionInput = document.getElementById('consist-caption');
+    captionInput.placeholder = 'يقرا النص من الصورة...';
+    try {
+      const resp = await fetch('/api/extract-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64, mime })
+      });
+      const data = await resp.json();
+      if (data.text && data.text.length > 0) {
+        captionInput.value = data.text;
+        updateConsistBtn();
+      }
+    } catch (err) {
+      console.warn('Auto-extract failed:', err);
+    }
+    captionInput.placeholder = 'مثلا: فيضانات تونس 2026...';
   };
   reader.readAsDataURL(file);
 
