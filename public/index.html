@@ -448,6 +448,28 @@
       margin: 0;
     }
 
+    .free-tools-header {
+      text-align: center;
+      padding: 60px 24px 0;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .free-tools-label {
+      display: block;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .free-tools-sub {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
     /* ===== TOOL CARD ===== */
     .tool-card {
       background: var(--card);
@@ -1012,10 +1034,10 @@
       <span class="nav-title">مثبّت</span>
     </a>
     <ul class="nav-links">
-      <li><a href="#tool1">🖼️ كاشف الصور</a></li>
-      <li><a href="#tool2">🔗 التطابق</a></li>
-      <li><a href="#tool3">📝 كاشف النص</a></li>
-      <li><a href="#tool4">🔍 مثبّت</a></li>
+      <li><a href="#tool4" style="color:var(--amber);">🔍 مثبّت</a></li>
+      <li><a href="#free-tools" style="opacity:0.6; font-size:0.82rem;">🖼️ كاشف الصور</a></li>
+      <li><a href="#tool2" style="opacity:0.6; font-size:0.82rem;">🔗 التطابق</a></li>
+      <li><a href="#tool3" style="opacity:0.6; font-size:0.82rem;">📝 كاشف النص</a></li>
     </ul>
   </nav>
 
@@ -1033,10 +1055,10 @@
     <div class="hero-content">
       <span class="hero-pill"><span class="hero-pill-dot"></span> مثبّت by ZvenDenLabs</span>
       <h1 class="hero-h1">زعما صحيحة؟</h1>
-      <p class="hero-sub">منصة التحقق الأولى بالعربي — تحليل الصور والنصوص والأخبار في ثوانٍ، بالذكاء الاصطناعي</p>
+      <p class="hero-sub">ابعثلو خبر، ادّعاء، أو صورة — يبحث في الوقت الحقيقي ويعطيك الحكم بالمصادر</p>
       <div class="hero-buttons">
-        <a href="#tool1" class="btn-primary">ابدأ التحقق ←</a>
-        <a href="#how" class="btn-secondary">كيفاش يشتغل؟</a>
+        <a href="#tool4" class="btn-primary">جرّب مثبّت ←</a>
+        <a href="#free-tools" class="btn-secondary">أدوات مجانية ↓</a>
       </div>
       <div class="hero-stats">
         <span class="hero-stat"><strong>٤</strong> أدوات تحقق</span>
@@ -1069,6 +1091,43 @@
       </div>
     </div>
   </section>
+
+  <!-- ===== TOOL 4: MELLE5ER FACT-CHECKER (MAIN PRODUCT) ===== -->
+  <section class="tool-section" id="tool4">
+    <div class="section-header">
+      <div class="section-icon amber">🔍</div>
+      <div>
+        <div class="section-name-ar" style="font-size:1.8rem;">مثبّت <span class="badge-live"><span class="pulse-dot"></span> وقت حقيقي</span></div>
+        <div class="section-name-en amber">Real-Time Fact-Checking Agent · Claude Sonnet</div>
+      </div>
+    </div>
+    <p style="margin: 10px 0 20px; color: var(--text2); font-size: 1rem; font-family: 'Cairo', sans-serif; line-height: 1.7;">صوّر أي خبر تشكّ فيه وحطّه هنا — أنا نبحث في الوقت الحقيقي ونقولك صحيح ولّا لا.</p>
+
+    <div class="tool-card premium">
+      <div class="chat-container" id="chat-container">
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="chat-welcome-icon">🔍</div>
+          <div class="chat-welcome-text">أحكيلي شنوّا تحب نتثبّتلك فيه</div>
+          <div class="chat-welcome-hint">شكّيت في خبر؟ حطّه هنا.</div>
+        </div>
+      </div>
+      <div id="chat-image-preview" style="display:none; align-items:center; gap:8px; padding:8px 14px; background:var(--bg2); border:1px solid rgba(245,158,11,0.1); border-bottom:none;"></div>
+      <div class="chat-input-row">
+        <input type="file" id="chat-image-input" accept="image/*" style="display:none;" onchange="handleChatImageSelect(event)" />
+        <button onclick="triggerChatImageUpload()" style="padding:10px 14px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; transition:color 0.2s;" onmouseover="this.style.color='var(--amber)'" onmouseout="this.style.color='var(--text-muted)'" title="أضف صورة">🖼️</button>
+        <input class="chat-input" type="text" id="chat-input" placeholder="وزارة الصحة أعلنت إلغاء التلقيح الإجباري للأطفال" onkeydown="if(event.key==='Enter')factCheck()" />
+        <button class="chat-send" id="chat-send" onclick="factCheck()">تثبّت ←</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- ===== FREE TOOLS SECTION ===== -->
+  <div class="free-tools-header" id="free-tools">
+    <span class="free-tools-label">أدوات التحقق المجانية</span>
+    <span class="free-tools-sub">تحليل معمّق للصور والنصوص — مجاني بالكامل</span>
+  </div>
 
   <!-- ===== TOOL 1: AI MEDIA DETECTOR ===== -->
   <section class="tool-section" id="tool1">
@@ -1227,39 +1286,6 @@
           <div class="signals-section" id="text-signals"></div>
           <div class="segments-section" id="text-segments"></div>
         </div>
-      </div>
-    </div>
-  </section>
-
-  <div class="divider"></div>
-
-  <!-- ===== TOOL 4: MELLE5ER FACT-CHECKER ===== -->
-  <section class="tool-section" id="tool4">
-    <div class="section-header">
-      <div class="section-icon amber">🔍</div>
-      <div>
-        <div style="font-size:0.72rem; color:var(--amber); font-family:'Cairo',sans-serif; font-weight:600; margin-bottom:2px;">Premium — وكيل الذكاء الاصطناعي</div>
-        <div class="section-name-ar">مثبّت — Fact-Checker Agent <span class="badge-live"><span class="pulse-dot"></span> وقت حقيقي</span></div>
-        <div class="section-name-en amber">Real-Time AI Agent · Claude Sonnet</div>
-      </div>
-    </div>
-    <span class="section-axis amber">Source Credibility + Fact-Checking</span>
-    <span class="section-badge badge-premium">Premium</span>
-
-    <div class="tool-card premium">
-      <div class="chat-container" id="chat-container">
-        <div class="chat-welcome" id="chat-welcome">
-          <div class="chat-welcome-icon">🔍</div>
-          <div class="chat-welcome-text">أحكيلي شنوّا تحب نتثبّتلك فيه</div>
-          <div class="chat-welcome-hint">شكّيت في خبر؟ حطّه هنا.</div>
-        </div>
-      </div>
-      <div id="chat-image-preview" style="display:none; align-items:center; gap:8px; padding:8px 14px; background:var(--bg2); border:1px solid rgba(245,158,11,0.1); border-bottom:none;"></div>
-      <div class="chat-input-row">
-        <input type="file" id="chat-image-input" accept="image/*" style="display:none;" onchange="handleChatImageSelect(event)" />
-        <button onclick="triggerChatImageUpload()" style="padding:10px 14px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; transition:color 0.2s;" onmouseover="this.style.color='var(--amber)'" onmouseout="this.style.color='var(--text-muted)'" title="أضف صورة">🖼️</button>
-        <input class="chat-input" type="text" id="chat-input" placeholder="وزارة الصحة أعلنت إلغاء التلقيح الإجباري للأطفال" onkeydown="if(event.key==='Enter')factCheck()" />
-        <button class="chat-send" id="chat-send" onclick="factCheck()">تثبّت ←</button>
       </div>
     </div>
   </section>
