@@ -20,6 +20,14 @@ This repository contains a single Node.js + Express web app that exposes four ve
 | 📝 كاشف النص (TruthLens) | Classifies text as Human / AI / Manipulated | Groq (LLaMA 3.3 70B) | Freemium |
 | 🔍 مثبّت (Melle5er Fact-Checker) | Searches evidence and returns verdict + sources in Derja/French | Tavily + Firecrawl + Anthropic Claude Sonnet | Premium |
 
+## 🔍 Melle5er — WhatsApp Fact-Checker Agent
+
+Melle5er is the premium AI agent component of the suite. It runs on OpenClaw (an open-source self-hosted AI gateway) and is connected to WhatsApp. It uses Claude Sonnet with real-time web search via Tavily to fact-check any claim sent by a user.
+
+The agent is not included in this repo — it runs as a live service and will be demonstrated live during the presentation.
+
+Live demo: send any claim to the agent on WhatsApp during the presentation.
+
 ## How To Run
 
 ### Prerequisites
