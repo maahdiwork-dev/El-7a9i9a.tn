@@ -7,6 +7,15 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+function requireEnv(...names) {
+  const missing = names.filter((name) => !process.env[name]);
+  if (missing.length) {
+    const error = new Error(`Missing required environment variables: ${missing.join(', ')}`);
+    error.statusCode = 500;
+    throw error;
+  }
+}
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -22,6 +31,8 @@ const upload = multer({
 // ================================================================
 app.post('/api/detect-media', upload.single('file'), async (req, res) => {
   try {
+    requireEnv('GROQ_API_KEY');
+
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
     const base64 = req.file.buffer.toString('base64');
@@ -88,6 +99,8 @@ REASON: [2-3 sentences in Arabic script]`;
 // ================================================================
 app.post('/api/check-consistency', async (req, res) => {
   try {
+    requireEnv('GROQ_API_KEY');
+
     const { image, mime, caption, context } = req.body;
     if (!image || !caption) return res.status(400).json({ error: 'Image and caption are required' });
 
@@ -200,6 +213,8 @@ You MUST respond in this exact JSON format:
 
 app.post('/api/classify', async (req, res) => {
   try {
+    requireEnv('GROQ_API_KEY');
+
     const { text } = req.body;
     if (!text || text.length < 20) return res.status(400).json({ error: 'Text must be at least 20 characters' });
 
@@ -299,6 +314,8 @@ You MUST use this exact output format:
 
 // Describe image using Groq Vision (same model as Tool 1/2)
 async function describeImage(base64, mime) {
+  requireEnv('GROQ_API_KEY');
+
   const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -325,6 +342,8 @@ async function describeImage(base64, mime) {
 
 // Search with Tavily
 async function tavilySearch(query, options = {}) {
+  requireEnv('TAVILY_API_KEY');
+
   const resp = await fetch('https://api.tavily.com/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -349,6 +368,8 @@ async function tavilySearch(query, options = {}) {
 
 // Extract full page content with Firecrawl
 async function firecrawlExtract(url) {
+  requireEnv('FIRECRAWL_API_KEY');
+
   const resp = await fetch('https://api.firecrawl.dev/v1/scrape', {
     method: 'POST',
     headers: {
@@ -365,6 +386,8 @@ async function firecrawlExtract(url) {
 
 // Generate verdict with Claude Sonnet 4 (Anthropic API)
 async function generateVerdict(systemPrompt, userMessage) {
+  requireEnv('ANTHROPIC_API_KEY');
+
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -533,6 +556,16 @@ app.get('/api/health', (req, res) => {
 //  Start
 // ================================================================
 app.listen(PORT, () => {
+  const recommendedVars = [
+    'GROQ_API_KEY',
+    'TAVILY_API_KEY',
+    'FIRECRAWL_API_KEY',
+    'ANTHROPIC_API_KEY'
+  ];
+  const missing = recommendedVars.filter((name) => !process.env[name]);
   console.log(`\n  ⚡ ZvenDenLabs Verification Suite`);
   console.log(`  → http://localhost:${PORT}\n`);
+  if (missing.length) {
+    console.log(`  Missing env vars: ${missing.join(', ')}`);
+  }
 });

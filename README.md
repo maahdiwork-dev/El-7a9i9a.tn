@@ -88,3 +88,26 @@ http://localhost:3000
 - Problem: misinformation spread and trust erosion
 - Positioning: Arabic-first verification workflow for MENA
 - Model: Tools 1-3 as freemium infrastructure, Tool 4 as premium agent product
+
+## Railway Deployment
+
+This project can be deployed to Railway as a single Node.js service.
+
+### Required Railway Variables
+
+- `GROQ_API_KEY`
+- `TAVILY_API_KEY`
+- `FIRECRAWL_API_KEY`
+- `ANTHROPIC_API_KEY`
+
+Railway injects `PORT` automatically.
+
+### Deploy Steps
+
+1. Create a new Railway project
+2. Choose `Deploy from GitHub repo`
+3. Select this repository
+4. Add the required variables
+5. Deploy
+
+Railway should auto-detect the app and run `npm start`.

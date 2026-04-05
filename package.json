@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "ZvenDenLabs Verification Suite — 4-tool AI verification platform for the Trust Crisis",
   "main": "server.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
