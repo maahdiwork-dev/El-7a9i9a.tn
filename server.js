@@ -17,7 +17,7 @@ const upload = multer({
 });
 
 // ================================================================
-//  TOOL 1 — AI Media Detector (Gemini)
+//  TOOL 1 — AI Media Detector (Groq / Llama 4 Scout Vision)
 //  Detects AI-generated images and videos
 // ================================================================
 app.post('/api/detect-media', upload.single('file'), async (req, res) => {
@@ -27,11 +27,11 @@ app.post('/api/detect-media', upload.single('file'), async (req, res) => {
     const base64 = req.file.buffer.toString('base64');
     const mime = req.file.mimetype;
 
-    const body = {
-      contents: [{
-        parts: [
-          {
-            text: `You are an AI-generated media detection expert. Analyze this media file carefully for signs of AI generation.
+    if (!mime.startsWith('image/')) {
+      return res.status(400).json({ error: 'Video detection requires Gemini API — please upload an image for now.' });
+    }
+
+    const prompt = `You are an AI-generated media detection expert. Analyze this image carefully for signs of AI generation.
 
 Look for:
 - Unnatural textures, lighting, or shadows
@@ -40,26 +40,37 @@ Look for:
 - Too-perfect symmetry or smoothness
 - Unusual patterns in noise or compression
 
+IMPORTANT: Write the REASON in Arabic script (العربية). Use simple Modern Standard Arabic. Do NOT use English. Do NOT use Latin characters.
+
 Respond EXACTLY in this format:
 VERDICT: [AI-GENERATED or NATURAL]
 CONFIDENCE: [X]%
-REASON: [2-3 sentence explanation of the specific indicators you found]`
-          },
-          { inline_data: { mime_type: mime, data: base64 } }
-        ]
-      }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
-    };
+REASON: [2-3 sentences in Arabic script]`;
 
-    const resp = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
-    );
+    const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+            { type: 'text', text: prompt }
+          ]
+        }],
+        temperature: 0.1,
+        max_tokens: 1024
+      })
+    });
 
     const data = await resp.json();
     if (data.error) return res.status(500).json({ error: data.error.message });
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const text = data.choices?.[0]?.message?.content || '';
     const isAI = text.toUpperCase().includes('AI-GENERATED');
     const confMatch = text.match(/(\d+)%/);
     const confidence = confMatch ? parseInt(confMatch[1]) : 50;
@@ -94,13 +105,15 @@ Analyze across these 5 dimensions:
 4. **Emotional manipulation** — Is the image used to evoke emotions unrelated to the actual content?
 5. **Reuse detection** — Does this appear to be a photo recycled from a different event or context?
 
-You MUST respond in this exact JSON format (no markdown, no extra text):
+You MUST respond in this exact JSON format (no markdown, no extra text).
+IMPORTANT: Write "summary" and all "detail" fields in Arabic script (العربية). Use simple Modern Standard Arabic. Do NOT use English or Latin characters in those fields.
+
 {
   "confidence_score": <number 0-100>,
   "verdict": "<one of: Consistent | Likely Consistent | Uncertain | Likely Misleading | Misleading>",
-  "summary": "<2-3 sentence explanation>",
+  "summary": "<2-3 sentence explanation in Arabic script>",
   "findings": [
-    { "type": "<alignment|temporal|geographic|emotional|reuse>", "detail": "<specific finding>" }
+    { "type": "<alignment|temporal|geographic|emotional|reuse>", "detail": "<specific finding in Arabic script>" }
   ]
 }`;
 
@@ -232,18 +245,281 @@ app.post('/api/classify', async (req, res) => {
 });
 
 // ================================================================
-//  TOOL 4 — Melle5er Fact-Checker (placeholder — backend added later)
+//  TOOL 4 — Melle5er Fact-Checker (مثبّت)
+//  Tavily search → Firecrawl extraction → Kimi verdict
 // ================================================================
-app.post('/api/fact-check', async (req, res) => {
-  const { claim } = req.body;
-  if (!claim) return res.status(400).json({ error: 'No claim provided' });
 
-  // Placeholder response — will be wired to OpenClaw/Claude agent
-  res.json({
-    status: 'demo',
-    message: 'Agent backend will be connected — use WhatsApp demo for live fact-checking',
-    claim
+const MELLE5ER_SYSTEM = `You are Melle5er (مثبّت) — a Tunisian Arabic fact-checker.
+
+Personality: warm, direct, like a smart Tunisian friend at a café.
+
+Language:
+- Default: Tunisian Arabic (Derja)
+- If user writes in French: respond in French
+- Never switch to English unless the user writes English
+
+You will receive a claim and search results from the web. Analyze the evidence and produce a verdict.
+
+Rules:
+- ✅ صحيح = 2+ credible sources confirm the claim
+- ❌ خاطئ = credible source directly contradicts, nothing supports
+- ❓ ما نجمتش نتأكد = not enough info either way
+- Never give ✅ without at least one real URL source
+- If nothing found: say "ما لقيت حتى حاجة تأكّد هالكلام"
+- Don't make up sources. Only cite URLs from the search results provided.
+- Don't lecture about media literacy. Just answer.
+
+Source credibility ratings:
+- عالية (HIGH): Reuters, AP, TAP, BBC, Al Jazeera, France 24, Mosaique FM, Shems FM, KUNA
+- متوسطة (MEDIUM): established independent media, known regional outlets
+- ضعيفة (LOW): blogs, social media, unverified sites, tabloids, Facebook pages
+
+When no sources confirm a claim:
+- Reason about ABSENCE of evidence: if this were true, which major outlets SHOULD have covered it? (e.g. "لو كان الخبر صحيح، كان لازم يكون عند KUNA و Reuters")
+- Assess the credibility of the original source (a Facebook page is NOT the same as an official news agency)
+- Give a clear recommendation about whether to trust the claim
+
+If an image description is provided, use it as part of the claim context. Identify what the image shows, what source published it, and what specific claim is being made.
+
+Analysis should be 3-5 lines: what you found, what's missing, what SHOULD exist if true, and your assessment.
+
+You MUST use this exact output format:
+
+🔍 *[topic — one line summary of the claim]*
+━━━━━━━━━━━━━━━
+الحكم: [✅ صحيح / ❌ خاطئ / ❓ ما نجمتش نتأكد]
+الثقة: [عالية / متوسطة / ضعيفة]
+━━━━━━━━━━━━━━━
+📋 *التحليل:*
+[3-5 lines — what was found, what's missing, credibility assessment of the source, recommendation]
+
+🔗 *المصادر:*
+• [Source name](URL) — مصداقية [عالية/متوسطة/ضعيفة]
+• [Source name](URL) — مصداقية [عالية/متوسطة/ضعيفة]`;
+
+// Describe image using Groq Vision (same model as Tool 1/2)
+async function describeImage(base64, mime) {
+  const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: `data:${mime};base64,${base64}` } },
+          { type: 'text', text: 'You are a fact-checker. Extract the CLAIM or NEWS CONTENT from this image. Focus on:\n1. What is the factual claim being made? (who, what, when, where)\n2. Any text, headlines, or captions visible — transcribe them exactly\n3. What source/outlet published this? (newspaper name, social media page, etc.)\n\nDo NOT describe colors, layout, or visual design. Focus ONLY on the factual content and claims.\nWrite in the same language as the text in the image. Be concise.' }
+        ]
+      }],
+      temperature: 0.1,
+      max_tokens: 512
+    })
   });
+  const data = await resp.json();
+  if (data.error) throw new Error('Image description failed: ' + data.error.message);
+  return data.choices?.[0]?.message?.content || '';
+}
+
+// Search with Tavily
+async function tavilySearch(query, options = {}) {
+  const resp = await fetch('https://api.tavily.com/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      api_key: process.env.TAVILY_API_KEY,
+      query,
+      search_depth: options.depth || 'basic',
+      include_answer: false,
+      max_results: options.max || 5,
+      include_domains: options.domains || [],
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error('Search failed: ' + (data.error.message || data.error));
+  return (data.results || []).map(r => ({
+    title: r.title,
+    url: r.url,
+    snippet: r.content || '',
+    score: r.score || 0
+  }));
+}
+
+// Extract full page content with Firecrawl
+async function firecrawlExtract(url) {
+  const resp = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`
+    },
+    body: JSON.stringify({ url, formats: ['markdown'] })
+  });
+  const data = await resp.json();
+  if (!data.success) return null;
+  const md = data.data?.markdown || '';
+  return md.length > 3000 ? md.substring(0, 3000) : md;
+}
+
+// Generate verdict with Claude Sonnet 4 (Anthropic API)
+async function generateVerdict(systemPrompt, userMessage) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: userMessage }
+      ],
+      temperature: 0.3,
+      max_tokens: 1500
+    })
+  });
+  const data = await resp.json();
+  if (data.error) throw new Error('Verdict generation failed: ' + (data.error.message || JSON.stringify(data.error)));
+  // Anthropic returns content as an array of blocks
+  const textBlock = (data.content || []).find(b => b.type === 'text');
+  return textBlock?.text || '';
+}
+
+// Detect if text is primarily Arabic or French
+function detectLang(text) {
+  if (!text) return 'ar';
+  const ar = (text.match(/[\u0600-\u06FF]/g) || []).length;
+  const fr = (text.match(/[àâéèêëïîôùûüÿçœæ]/gi) || []).length;
+  const latin = (text.match(/[a-zA-Z]/g) || []).length;
+  if (ar > latin) return 'ar';
+  if (fr > 2 || (latin > ar && /\b(le|la|les|du|des|un|une|est|que|dans|pour|avec|sur)\b/i.test(text))) return 'fr';
+  return 'ar';
+}
+
+app.post('/api/fact-check', async (req, res) => {
+  try {
+    const { claim, image, mime } = req.body;
+    if (!claim && !image) return res.status(400).json({ error: 'No claim provided' });
+
+    // Step 1: Image description (if provided)
+    let imageDescription = null;
+    if (image && mime) {
+      imageDescription = await describeImage(image, mime);
+    }
+
+    // Build the full claim text
+    const claimText = claim || '';
+    const fullContext = claimText + (imageDescription ? '\n' + imageDescription : '');
+    const lang = detectLang(fullContext);
+
+    // Step 2: Extract a concise search query from the claim + image description
+    // (Tavily chokes on long queries — we need a short, focused search term)
+    let searchQuery = claimText;
+    if (imageDescription || claimText.length > 150) {
+      const extractResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: 'Extract the core factual claim from this text. Return ONLY a short search query (max 15 words) in the same language as the claim. No explanation, no quotes, just the search query.' },
+            { role: 'user', content: fullContext }
+          ],
+          temperature: 0,
+          max_tokens: 60
+        })
+      });
+      const extractData = await extractResp.json();
+      const extracted = extractData.choices?.[0]?.message?.content?.trim();
+      if (extracted && extracted.length > 5) searchQuery = extracted;
+    }
+    if (!searchQuery) searchQuery = imageDescription?.substring(0, 100) || '';
+
+    console.log('Search query:', searchQuery);
+
+    // Step 3: Tavily searches (up to 4, local first)
+    const tunisianDomains = ['mosaiquefm.net', 'shemsfm.net', 'tap.info.tn', 'kapitalis.com', 'leaders.com.tn', 'businessnews.com.tn', 'webmanagercenter.com', 'nawaat.org'];
+    let allResults = [];
+
+    // Search 1: Local (Tunisia/MENA)
+    const localQuery = lang === 'fr'
+      ? searchQuery + ' Tunisie'
+      : searchQuery;
+    const localResults = await tavilySearch(localQuery, { max: 5, domains: tunisianDomains }).catch(() => []);
+    allResults.push(...localResults);
+
+    // Search 2: Broader (same language, no domain filter)
+    const broadResults = await tavilySearch(searchQuery, { max: 5 }).catch(() => []);
+    allResults.push(...broadResults);
+
+    // Search 3: Other language if needed
+    if (allResults.length < 2) {
+      const altQuery = lang === 'ar'
+        ? searchQuery + ' fact check'
+        : searchQuery + ' تحقق';
+      const altResults = await tavilySearch(altQuery, { max: 3 }).catch(() => []);
+      allResults.push(...altResults);
+    }
+
+    // Search 4: Deep search if still thin
+    if (allResults.length < 2) {
+      const deepResults = await tavilySearch(searchQuery, { max: 5, depth: 'advanced' }).catch(() => []);
+      allResults.push(...deepResults);
+    }
+
+    // Deduplicate by URL
+    const seen = new Set();
+    allResults = allResults.filter(r => {
+      if (seen.has(r.url)) return false;
+      seen.add(r.url);
+      return true;
+    });
+
+    // Step 3: Firecrawl top results if snippets are thin
+    const topResults = allResults.slice(0, 3);
+    for (let i = 0; i < topResults.length; i++) {
+      if (topResults[i].snippet.length < 100) {
+        const full = await firecrawlExtract(topResults[i].url).catch(() => null);
+        if (full) topResults[i].snippet = full;
+      }
+    }
+
+    // Step 4: Build context for Kimi
+    let evidence = '';
+    if (allResults.length === 0) {
+      evidence = 'لم يتم العثور على أي نتائج بحث متعلقة بهذا الادعاء.';
+    } else {
+      evidence = allResults.slice(0, 8).map((r, i) =>
+        `[${i + 1}] ${r.title}\nURL: ${r.url}\n${r.snippet}`
+      ).join('\n\n');
+    }
+
+    let userMessage = '';
+    if (imageDescription) {
+      userMessage += `[وصف الصورة المرفقة]\n${imageDescription}\n\n`;
+    }
+    userMessage += `[الادّعاء]\n${claimText || '(الادعاء في الصورة أعلاه)'}\n\n`;
+    userMessage += `[نتائج البحث]\n${evidence}`;
+
+    // Step 5: Kimi verdict
+    const verdict = await generateVerdict(MELLE5ER_SYSTEM, userMessage);
+
+    res.json({
+      result: verdict,
+      image_description: imageDescription,
+      sources_found: allResults.length
+    });
+  } catch (err) {
+    console.error('Fact-check error:', err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ================================================================

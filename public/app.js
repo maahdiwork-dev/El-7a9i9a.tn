@@ -262,12 +262,21 @@ async function checkConsistency() {
     const findingsEl = document.getElementById('consist-findings');
     findingsEl.innerHTML = '';
     if (data.findings && data.findings.length) {
-      const typeIcons = { alignment: '🔗', temporal: '⏰', geographic: '🌍', emotional: '💢', reuse: '♻️' };
+      function getTypeLabel(type) {
+        const t = (type || '').toLowerCase();
+        if (t.includes('alignment') || t.includes('visual') || t.includes('textual')) return { icon: '🔗', label: 'تطابق الصورة والنص' };
+        if (t.includes('temporal') || t.includes('time') || t.includes('date')) return { icon: '⏰', label: 'التسلسل الزمني' };
+        if (t.includes('geo') || t.includes('cultural') || t.includes('location')) return { icon: '🌍', label: 'التطابق الجغرافي' };
+        if (t.includes('emotion') || t.includes('manipul')) return { icon: '💢', label: 'التلاعب العاطفي' };
+        if (t.includes('reuse') || t.includes('recycle') || t.includes('context')) return { icon: '♻️', label: 'إعادة استخدام الصورة' };
+        return { icon: '📌', label: 'ملاحظة' };
+      }
       data.findings.forEach(f => {
+        const { icon, label } = getTypeLabel(f.type);
         const div = document.createElement('div');
         div.className = 'finding-item';
         div.innerHTML = `
-          <div class="finding-type">${typeIcons[f.type] || '📌'} ${esc(f.type)}</div>
+          <div class="finding-type">${icon} ${label}</div>
           <div class="finding-detail">${esc(f.detail)}</div>
         `;
         findingsEl.appendChild(div);
@@ -395,10 +404,88 @@ async function classifyText() {
 //  TOOL 4 — Melle5er Fact-Checker (Chat UI)
 // ================================================================
 
+let chatImage = null; // { base64, mime, name }
+
+// Image paste handler (Ctrl+V)
+document.addEventListener('paste', (e) => {
+  const chatInput = document.getElementById('chat-input');
+  if (!chatInput || document.activeElement !== chatInput) return;
+
+  const items = e.clipboardData?.items;
+  if (!items) return;
+
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      e.preventDefault();
+      const file = item.getAsFile();
+      if (file) loadChatImage(file);
+      return;
+    }
+  }
+});
+
+// Image file input handler
+function triggerChatImageUpload() {
+  document.getElementById('chat-image-input').click();
+}
+
+function handleChatImageSelect(e) {
+  if (e.target.files[0]) loadChatImage(e.target.files[0]);
+}
+
+function loadChatImage(file) {
+  if (!file.type.startsWith('image/')) return;
+  if (file.size > 20 * 1024 * 1024) {
+    alert('الصورة كبيرة برشا — الحد الأقصى 20MB');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const dataUrl = e.target.result;
+    chatImage = {
+      base64: dataUrl.split(',')[1],
+      mime: file.type,
+      name: file.name || 'pasted-image'
+    };
+    // Show preview
+    const preview = document.getElementById('chat-image-preview');
+    preview.innerHTML = `
+      <img src="${dataUrl}" style="max-height:60px; border-radius:8px; border:1px solid var(--border);" />
+      <span style="font-size:0.75rem; color:var(--text-muted);">${esc(chatImage.name)}</span>
+      <button onclick="removeChatImage()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:1rem;">✕</button>
+    `;
+    preview.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeChatImage() {
+  chatImage = null;
+  const input = document.getElementById('chat-image-input');
+  if (input) input.value = '';
+  const preview = document.getElementById('chat-image-preview');
+  preview.innerHTML = '';
+  preview.style.display = 'none';
+}
+
+// Format verdict text as rich HTML
+function formatVerdict(text) {
+  let html = esc(text);
+  // Bold: *text*
+  html = html.replace(/\*([^*]+)\*/g, '<strong>$1</strong>');
+  // Links: [text](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--cyan); text-decoration:none; border-bottom:1px solid rgba(34,211,238,0.3);">$1</a>');
+  // Separator lines
+  html = html.replace(/━+/g, '<hr style="border:none; border-top:1px solid var(--border); margin:8px 0;" />');
+  // Line breaks
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
 async function factCheck() {
   const input = document.getElementById('chat-input');
   const claim = input.value.trim();
-  if (!claim) return;
+  if (!claim && !chatImage) return;
 
   const container = document.getElementById('chat-container');
   const welcome = document.getElementById('chat-welcome');
@@ -407,14 +494,32 @@ async function factCheck() {
   // Add user message
   const userMsg = document.createElement('div');
   userMsg.className = 'chat-msg user';
-  userMsg.textContent = claim;
+  let userContent = '';
+  if (chatImage) {
+    userContent += `<img src="data:${chatImage.mime};base64,${chatImage.base64}" style="max-width:200px; max-height:150px; border-radius:8px; display:block; margin-bottom:6px;" />`;
+  }
+  if (claim) {
+    userContent += esc(claim);
+  }
+  userMsg.innerHTML = userContent;
   container.appendChild(userMsg);
   input.value = '';
+
+  // Build request body
+  const body = {};
+  if (claim) body.claim = claim;
+  if (chatImage) {
+    body.image = chatImage.base64;
+    body.mime = chatImage.mime;
+  }
+
+  // Clear image after sending
+  removeChatImage();
 
   // Add thinking indicator
   const thinking = document.createElement('div');
   thinking.className = 'chat-msg thinking';
-  thinking.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> مثبّت يبحث...';
+  thinking.innerHTML = '<div class="thinking-dots"><span></span><span></span><span></span></div> يلا نتثبّتوا 🔍';
   container.appendChild(thinking);
   container.scrollTop = container.scrollHeight;
 
@@ -426,30 +531,29 @@ async function factCheck() {
     const resp = await fetch('/api/fact-check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claim })
+      body: JSON.stringify(body)
     });
 
     const data = await resp.json();
     thinking.remove();
 
+    if (data.error) throw new Error(data.error);
+
     // Agent response
     const agentMsg = document.createElement('div');
     agentMsg.className = 'chat-msg agent';
 
-    if (data.status === 'demo') {
-      agentMsg.innerHTML = `
-        <div style="margin-bottom:8px;">🔍 <strong>مثبّت</strong></div>
-        <div style="margin-bottom:10px; color: var(--text2);">
-          الـ backend ماهوش مربوط توّا — في العرض الحي نستعملو WhatsApp.
-        </div>
-        <div style="padding:10px 14px; background:rgba(34,211,238,0.06); border-radius:8px; border:1px solid rgba(34,211,238,0.15); font-size:0.82rem;">
-          💡 في العرض الحي، مثبّت يبحث في الانترنت، يقارن المصادر، ويعطيك حكم مع مصداقية كل مصدر.
-        </div>
-      `;
-    } else {
-      agentMsg.textContent = data.result || JSON.stringify(data);
+    let responseHtml = '';
+
+    // Main verdict
+    responseHtml += `<div class="verdict-content">${formatVerdict(data.result)}</div>`;
+
+    // Sources count
+    if (data.sources_found !== undefined) {
+      responseHtml += `<div style="margin-top:8px; font-size:0.72rem; color:var(--text-muted);">📊 ${data.sources_found} مصدر تم تحليلهم</div>`;
     }
 
+    agentMsg.innerHTML = responseHtml;
     container.appendChild(agentMsg);
   } catch (err) {
     thinking.remove();
