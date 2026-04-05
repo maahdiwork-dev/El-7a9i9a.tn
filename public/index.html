@@ -3,21 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZvenDenLabs — مثبّت</title>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <title>مثبّت — زعما صحيحة؟</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Tajawal:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0a0c15;
-      --bg2: #0f1221;
-      --bg3: #151832;
+      --bg: #0a0a0f;
+      --bg2: #0f0f1a;
+      --bg3: #161625;
       --card: rgba(255,255,255,0.03);
       --card-hover: rgba(255,255,255,0.06);
       --border: rgba(255,255,255,0.07);
-      --border-hover: rgba(129,140,248,0.3);
-      --accent: #818cf8;
-      --accent2: #6366f1;
+      --border-hover: rgba(245,158,11,0.3);
+      --amber: #F59E0B;
+      --amber2: #D97706;
+      --amber-glow: rgba(245,158,11,0.12);
       --cyan: #22d3ee;
       --cyan2: #06b6d4;
       --green: #10b981;
@@ -28,8 +29,10 @@
       --text: #f1f5f9;
       --text2: #cbd5e1;
       --text-muted: #64748b;
-      --glow: rgba(129,140,248,0.12);
       --glow-cyan: rgba(34,211,238,0.1);
+      /* Legacy aliases for existing JS classes */
+      --accent: #F59E0B;
+      --accent2: #D97706;
     }
 
     html { scroll-behavior: smooth; }
@@ -37,23 +40,27 @@
     body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'IBM Plex Sans Arabic', 'Inter', sans-serif;
+      font-family: 'Cairo', 'Tajawal', sans-serif;
       line-height: 1.6;
       overflow-x: hidden;
     }
 
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: rgba(245,158,11,0.3); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(245,158,11,0.5); }
+
     /* ===== NAVBAR ===== */
     .navbar {
       position: fixed;
-      top: 0;
-      right: 0;
-      left: 0;
+      top: 0; right: 0; left: 0;
       z-index: 100;
       padding: 12px 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(10,12,21,0.85);
+      background: rgba(10,10,15,0.88);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
@@ -68,19 +75,18 @@
 
     .nav-logo {
       width: 32px; height: 32px;
-      background: linear-gradient(135deg, var(--accent), var(--cyan));
+      background: linear-gradient(135deg, var(--amber), var(--amber2));
       border-radius: 8px;
       display: flex; align-items: center; justify-content: center;
       font-size: 14px;
+      box-shadow: 0 0 16px rgba(245,158,11,0.2);
     }
 
     .nav-title {
-      font-family: 'Inter', sans-serif;
-      font-weight: 700;
-      font-size: 1.1rem;
-      background: linear-gradient(135deg, var(--accent), var(--cyan));
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--amber);
     }
 
     .nav-links {
@@ -97,7 +103,7 @@
       color: var(--text-muted);
       text-decoration: none;
       transition: all 0.2s;
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-family: 'Cairo', sans-serif;
     }
 
     .nav-links a:hover {
@@ -113,120 +119,224 @@
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 120px 24px 80px;
+      padding: 120px 24px 60px;
       position: relative;
       overflow: hidden;
     }
 
-    .hero::before {
-      content: '';
+    /* Ticker background */
+    .hero-ticker {
       position: absolute;
-      top: -300px; right: -300px;
-      width: 800px; height: 800px;
-      background: radial-gradient(circle, rgba(129,140,248,0.08) 0%, transparent 65%);
+      top: 0; left: 0; right: 0; bottom: 0;
+      overflow: hidden;
       pointer-events: none;
+      z-index: 0;
     }
 
-    .hero::after {
-      content: '';
+    .ticker-track {
       position: absolute;
-      bottom: -200px; left: -200px;
-      width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 65%);
-      pointer-events: none;
+      white-space: nowrap;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.2rem;
+      color: rgba(255,255,255,0.05);
+      filter: blur(1px);
+      animation: ticker-scroll 45s linear infinite;
     }
 
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 16px;
-      border-radius: 99px;
-      border: 1px solid var(--border-hover);
-      background: rgba(129,140,248,0.06);
-      font-size: 0.78rem;
-      color: var(--accent);
-      font-family: 'Inter', sans-serif;
-      margin-bottom: 28px;
-      letter-spacing: 0.03em;
+    .ticker-track:nth-child(1) { top: 12%; }
+    .ticker-track:nth-child(2) { top: 28%; animation-duration: 38s; animation-direction: reverse; }
+    .ticker-track:nth-child(3) { top: 44%; animation-duration: 50s; }
+    .ticker-track:nth-child(4) { top: 60%; animation-duration: 42s; animation-direction: reverse; }
+    .ticker-track:nth-child(5) { top: 76%; animation-duration: 47s; }
+    .ticker-track:nth-child(6) { top: 90%; animation-duration: 40s; animation-direction: reverse; }
+
+    @keyframes ticker-scroll {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
     }
 
-    .hero-title {
-      font-size: 3.8rem;
-      font-weight: 800;
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, #fff 30%, var(--accent) 60%, var(--cyan) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 16px;
-      line-height: 1.15;
-    }
-
-    .hero-tagline {
-      font-size: 1.6rem;
-      font-weight: 600;
-      color: var(--text2);
-      margin-bottom: 12px;
-    }
-
-    .hero-tagline span { color: var(--cyan); }
-
-    .hero-desc {
-      max-width: 640px;
-      font-size: 1rem;
-      color: var(--text-muted);
-      line-height: 1.7;
-      margin-bottom: 40px;
-    }
-
-    .hero-cards {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      max-width: 900px;
-      width: 100%;
-      margin-bottom: 48px;
-    }
-
-    .hero-card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 20px 16px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.25s;
-      text-decoration: none;
-      color: inherit;
-    }
-
-    .hero-card:hover {
-      border-color: var(--border-hover);
-      background: var(--card-hover);
-      transform: translateY(-3px);
-      box-shadow: 0 8px 32px rgba(129,140,248,0.1);
-    }
-
-    .hero-card.premium { border-color: rgba(34,211,238,0.15); }
-    .hero-card.premium:hover { border-color: rgba(34,211,238,0.4); box-shadow: 0 8px 32px rgba(34,211,238,0.1); }
-
-    .hero-card-icon { font-size: 1.8rem; margin-bottom: 10px; }
-    .hero-card-name { font-size: 0.9rem; font-weight: 600; color: var(--text); }
-    .hero-card-en { font-size: 0.68rem; color: var(--text-muted); font-family: 'Inter', sans-serif; margin-top: 4px; }
-
-    .scroll-hint {
-      color: var(--text-muted);
-      font-size: 0.82rem;
+    .hero-content {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
-      animation: bounce 2s infinite;
     }
 
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(6px); }
+    .hero-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      border-radius: 99px;
+      border: 1px solid rgba(245,158,11,0.25);
+      background: rgba(245,158,11,0.06);
+      font-size: 0.78rem;
+      color: var(--amber);
+      font-family: 'Cairo', sans-serif;
+      font-weight: 600;
+      margin-bottom: 32px;
+    }
+
+    .hero-pill-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--amber);
+    }
+
+    .hero-h1 {
+      font-family: 'Cairo', sans-serif;
+      font-size: 4.5rem;
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 18px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-sub {
+      max-width: 620px;
+      font-size: 1.15rem;
+      font-weight: 400;
+      color: var(--text-muted);
+      line-height: 1.8;
+      margin-bottom: 36px;
+      font-family: 'Tajawal', sans-serif;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      padding: 14px 32px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--amber), var(--amber2));
+      color: #0a0a0f;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(245,158,11,0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(245,158,11,0.4);
+    }
+
+    .btn-secondary {
+      padding: 14px 32px;
+      border: 1px solid rgba(245,158,11,0.4);
+      border-radius: 12px;
+      background: transparent;
+      color: var(--amber);
+      font-family: 'Cairo', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(245,158,11,0.06);
+      border-color: var(--amber);
+    }
+
+    .hero-stats {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-family: 'Tajawal', sans-serif;
+    }
+
+    .hero-stat {
+      padding: 0 20px;
+    }
+
+    .hero-stat-divider {
+      width: 1px;
+      height: 18px;
+      background: rgba(255,255,255,0.12);
+    }
+
+    .hero-stat strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    /* ===== HOW IT WORKS ===== */
+    .how-section {
+      background: var(--bg2);
+      padding: 64px 24px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .how-title {
+      text-align: center;
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--amber);
+      margin-bottom: 40px;
+    }
+
+    .how-steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .how-step {
+      text-align: center;
+      position: relative;
+    }
+
+    .how-step-num {
+      font-family: 'Cairo', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 900;
+      color: var(--amber);
+      opacity: 0.8;
+      margin-bottom: 10px;
+      line-height: 1;
+    }
+
+    .how-step-title {
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .how-step-desc {
+      font-family: 'Tajawal', sans-serif;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* Arrow connectors */
+    .how-step:not(:last-child)::before {
+      content: '←';
+      position: absolute;
+      left: -20px;
+      top: 30px;
+      color: rgba(245,158,11,0.3);
+      font-size: 1.2rem;
     }
 
     /* ===== SECTION ===== */
@@ -234,6 +344,14 @@
       max-width: 860px;
       margin: 0 auto;
       padding: 80px 24px 60px;
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .tool-section.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
 
     .section-header {
@@ -245,18 +363,18 @@
 
     .section-icon {
       width: 48px; height: 48px;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background: linear-gradient(135deg, var(--cyan), var(--cyan2));
       border-radius: 14px;
       display: flex; align-items: center; justify-content: center;
       font-size: 22px;
       flex-shrink: 0;
     }
 
-    .section-icon.cyan { background: linear-gradient(135deg, var(--cyan), var(--cyan2)); }
+    .section-icon.amber { background: linear-gradient(135deg, var(--amber), var(--amber2)); }
 
-    .section-name-ar { font-size: 1.5rem; font-weight: 700; }
-    .section-name-en { font-size: 0.75rem; font-weight: 500; font-family: 'Inter', sans-serif; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; }
-    .section-name-en.cyan { color: var(--cyan); }
+    .section-name-ar { font-size: 1.5rem; font-weight: 700; font-family: 'Cairo', sans-serif; }
+    .section-name-en { font-size: 0.75rem; font-weight: 500; font-family: 'Inter', sans-serif; color: var(--cyan); text-transform: uppercase; letter-spacing: 0.06em; }
+    .section-name-en.amber { color: var(--amber); }
 
     .section-axis {
       display: inline-block;
@@ -265,15 +383,63 @@
       border-radius: 6px;
       font-size: 0.72rem;
       font-family: 'Inter', sans-serif;
-      background: rgba(129,140,248,0.08);
-      color: var(--accent);
-      border: 1px solid rgba(129,140,248,0.15);
-    }
-
-    .section-axis.cyan {
       background: rgba(34,211,238,0.08);
       color: var(--cyan);
-      border-color: rgba(34,211,238,0.15);
+      border: 1px solid rgba(34,211,238,0.15);
+    }
+
+    .section-axis.amber {
+      background: rgba(245,158,11,0.08);
+      color: var(--amber);
+      border-color: rgba(245,158,11,0.15);
+    }
+
+    .section-badge {
+      display: inline-block;
+      margin-right: 12px;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 600;
+    }
+
+    .badge-free {
+      background: rgba(34,211,238,0.08);
+      color: var(--cyan);
+      border: 1px solid rgba(34,211,238,0.15);
+    }
+
+    .badge-premium {
+      background: rgba(245,158,11,0.1);
+      color: var(--amber);
+      border: 1px solid rgba(245,158,11,0.2);
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(244,63,94,0.08);
+      color: var(--red);
+      border: 1px solid rgba(244,63,94,0.15);
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 600;
+    }
+
+    .pulse-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(244,63,94,0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(244,63,94,0); }
     }
 
     .divider {
@@ -292,7 +458,8 @@
     }
 
     .tool-card.premium {
-      border-color: rgba(34,211,238,0.12);
+      border-color: rgba(245,158,11,0.15);
+      box-shadow: 0 0 40px rgba(245,158,11,0.04), inset 0 0 40px rgba(245,158,11,0.02);
     }
 
     /* ===== UPLOAD ZONE ===== */
@@ -307,8 +474,8 @@
     }
 
     .upload-zone:hover, .upload-zone.dragover {
-      border-color: var(--accent);
-      background: rgba(129,140,248,0.04);
+      border-color: var(--cyan);
+      background: rgba(34,211,238,0.04);
     }
 
     .upload-zone input[type="file"] {
@@ -319,7 +486,7 @@
     }
 
     .upload-icon { font-size: 2.2rem; margin-bottom: 12px; }
-    .upload-text { font-size: 0.9rem; color: var(--text-muted); }
+    .upload-text { font-size: 0.9rem; color: var(--text-muted); font-family: 'Tajawal', sans-serif; }
     .upload-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; opacity: 0.7; }
 
     .file-preview {
@@ -327,8 +494,8 @@
       align-items: center;
       gap: 14px;
       padding: 14px 16px;
-      background: rgba(129,140,248,0.06);
-      border: 1px solid rgba(129,140,248,0.15);
+      background: rgba(34,211,238,0.04);
+      border: 1px solid rgba(34,211,238,0.15);
       border-radius: 10px;
       margin-top: 16px;
     }
@@ -367,6 +534,7 @@
       font-weight: 500;
       color: var(--text2);
       margin-bottom: 6px;
+      font-family: 'Tajawal', sans-serif;
     }
 
     input[type="text"], textarea {
@@ -376,14 +544,14 @@
       border: 1px solid var(--border);
       border-radius: 10px;
       color: var(--text);
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-family: 'Tajawal', sans-serif;
       font-size: 0.9rem;
       transition: border-color 0.2s;
       outline: none;
     }
 
     input[type="text"]:focus, textarea:focus {
-      border-color: var(--accent);
+      border-color: var(--cyan);
     }
 
     textarea {
@@ -398,7 +566,7 @@
       padding: 13px 28px;
       border: none;
       border-radius: 10px;
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-family: 'Cairo', sans-serif;
       font-size: 0.95rem;
       font-weight: 600;
       cursor: pointer;
@@ -406,14 +574,14 @@
       align-items: center;
       gap: 8px;
       transition: all 0.2s;
-      color: #fff;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      box-shadow: 0 4px 16px rgba(129,140,248,0.25);
+      color: #0a0a0f;
+      background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+      box-shadow: 0 4px 16px rgba(34,211,238,0.25);
     }
 
     .btn-analyze:hover:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 6px 24px rgba(129,140,248,0.35);
+      box-shadow: 0 6px 24px rgba(34,211,238,0.35);
     }
 
     .btn-analyze:disabled {
@@ -421,28 +589,23 @@
       cursor: not-allowed;
     }
 
-    .btn-analyze.cyan {
-      background: linear-gradient(135deg, var(--cyan), var(--cyan2));
-      color: #0a0c15;
-      box-shadow: 0 4px 16px rgba(34,211,238,0.25);
+    .btn-analyze.amber {
+      background: linear-gradient(135deg, var(--amber), var(--amber2));
+      color: #0a0a0f;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.25);
     }
 
-    .btn-analyze.cyan:hover:not(:disabled) {
-      box-shadow: 0 6px 24px rgba(34,211,238,0.35);
+    .btn-analyze.amber:hover:not(:disabled) {
+      box-shadow: 0 6px 24px rgba(245,158,11,0.35);
     }
 
     .btn-loading {
       display: none;
       width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: #0a0a0f;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
-    }
-
-    .btn-analyze.cyan .btn-loading {
-      border-color: rgba(0,0,0,0.2);
-      border-top-color: #0a0c15;
     }
 
     .btn-analyze.loading .btn-loading { display: block; }
@@ -480,12 +643,13 @@
       border-radius: 10px;
       font-weight: 700;
       font-size: 1rem;
+      font-family: 'Cairo', sans-serif;
     }
 
     .verdict-badge.safe { background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
     .verdict-badge.danger { background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.2); }
     .verdict-badge.warning { background: rgba(251,191,36,0.12); color: var(--yellow); border: 1px solid rgba(251,191,36,0.2); }
-    .verdict-badge.info { background: rgba(129,140,248,0.12); color: var(--accent); border: 1px solid rgba(129,140,248,0.2); }
+    .verdict-badge.info { background: rgba(245,158,11,0.12); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
     .verdict-badge.ai { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
     .verdict-badge.manipulated { background: rgba(192,132,252,0.12); color: var(--purple); border: 1px solid rgba(192,132,252,0.2); }
 
@@ -495,14 +659,13 @@
       background: rgba(255,255,255,0.06);
       border-radius: 99px;
       overflow: hidden;
-      position: relative;
     }
 
     .confidence-fill {
       height: 100%;
       border-radius: 99px;
       transition: width 0.8s ease;
-      background: linear-gradient(90deg, var(--accent), var(--cyan));
+      background: linear-gradient(90deg, var(--cyan), var(--amber));
     }
 
     .confidence-fill.danger { background: linear-gradient(90deg, var(--red), var(--orange)); }
@@ -524,6 +687,7 @@
       background: rgba(255,255,255,0.02);
       border-radius: 10px;
       border: 1px solid var(--border);
+      font-family: 'Tajawal', sans-serif;
     }
 
     /* Findings */
@@ -543,15 +707,14 @@
     }
 
     .finding-type {
-      font-size: 0.68rem;
-      font-family: 'Inter', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--accent);
+      font-size: 0.72rem;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+      color: var(--cyan);
       margin-bottom: 4px;
     }
 
-    .finding-detail { color: var(--text2); }
+    .finding-detail { color: var(--text2); font-family: 'Tajawal', sans-serif; }
 
     /* Signals */
     .signals-section { margin-top: 16px; }
@@ -561,6 +724,7 @@
       font-weight: 600;
       margin-bottom: 8px;
       color: var(--text);
+      font-family: 'Cairo', sans-serif;
     }
 
     .signals-grid {
@@ -615,7 +779,7 @@
       padding: 20px;
       background: rgba(0,0,0,0.2);
       border-radius: 12px 12px 0 0;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(245,158,11,0.1);
       border-bottom: none;
       display: flex;
       flex-direction: column;
@@ -629,8 +793,8 @@
     }
 
     .chat-welcome-icon { font-size: 3rem; margin-bottom: 12px; }
-    .chat-welcome-text { font-size: 1rem; color: var(--text2); }
-    .chat-welcome-hint { font-size: 0.82rem; margin-top: 8px; color: var(--text-muted); }
+    .chat-welcome-text { font-size: 1.1rem; color: var(--text2); font-family: 'Cairo', sans-serif; font-weight: 700; }
+    .chat-welcome-hint { font-size: 0.82rem; margin-top: 8px; color: var(--text-muted); font-family: 'Tajawal', sans-serif; }
 
     .chat-msg {
       max-width: 85%;
@@ -639,19 +803,20 @@
       font-size: 0.9rem;
       line-height: 1.6;
       animation: fadeIn 0.3s ease;
+      font-family: 'Tajawal', sans-serif;
     }
 
     .chat-msg.user {
       align-self: flex-end;
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      color: #fff;
-      border-bottom-left: 4px;
+      background: linear-gradient(135deg, var(--amber), var(--amber2));
+      color: #0a0a0f;
+      font-weight: 500;
     }
 
     .chat-msg.agent {
       align-self: flex-start;
       background: var(--bg3);
-      border: 1px solid rgba(34,211,238,0.15);
+      border: 1px solid rgba(245,158,11,0.12);
       color: var(--text);
     }
 
@@ -669,7 +834,7 @@
       display: inline-block;
       width: 6px; height: 6px;
       border-radius: 50%;
-      background: var(--cyan);
+      background: var(--amber);
       animation: thinkDot 1.4s infinite;
     }
 
@@ -684,7 +849,7 @@
     .chat-input-row {
       display: flex;
       gap: 0;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(245,158,11,0.1);
       border-top: none;
       border-radius: 0 0 12px 12px;
       overflow: hidden;
@@ -697,7 +862,7 @@
       background: transparent;
       border: none;
       color: var(--text);
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-family: 'Tajawal', sans-serif;
       font-size: 0.9rem;
       outline: none;
     }
@@ -706,13 +871,13 @@
 
     .chat-send {
       padding: 14px 24px;
-      background: linear-gradient(135deg, var(--cyan), var(--cyan2));
+      background: linear-gradient(135deg, var(--amber), var(--amber2));
       border: none;
-      color: #0a0c15;
+      color: #0a0a0f;
       font-weight: 700;
       font-size: 0.9rem;
       cursor: pointer;
-      font-family: 'IBM Plex Sans Arabic', sans-serif;
+      font-family: 'Cairo', sans-serif;
       transition: opacity 0.2s;
     }
 
@@ -723,7 +888,7 @@
       white-space: pre-wrap;
       line-height: 1.8;
     }
-    .chat-msg.agent .verdict-content a { word-break: break-all; }
+    .chat-msg.agent .verdict-content a { word-break: break-all; color: var(--amber); text-decoration: none; border-bottom: 1px solid rgba(245,158,11,0.3); }
     .chat-msg.agent .verdict-content hr { opacity: 0.4; }
 
     /* ===== RISK BADGE ===== */
@@ -743,26 +908,67 @@
     .risk-badge.high { background: rgba(244,63,94,0.1); color: var(--red); }
 
     /* ===== FOOTER ===== */
-    footer {
-      text-align: center;
-      padding: 32px 24px;
+    .site-footer {
+      border-top: 1px solid rgba(245,158,11,0.15);
+      margin-top: 80px;
+      padding: 48px 32px 32px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 40px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .footer-brand-name {
+      font-family: 'Cairo', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--amber);
+      margin-bottom: 6px;
+    }
+
+    .footer-brand-sub {
       font-size: 0.82rem;
       color: var(--text-muted);
-      border-top: 1px solid var(--border);
-      margin-top: 60px;
+      font-family: 'Tajawal', sans-serif;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 8px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-family: 'Tajawal', sans-serif;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--amber); }
+
+    .footer-right {
+      text-align: left;
+      padding-top: 8px;
+    }
+
+    .footer-copy {
+      font-size: 0.82rem;
+      color: var(--text-muted);
       font-family: 'Inter', sans-serif;
     }
 
-    footer strong { color: var(--accent); }
-
-    .watermark {
-      position: fixed;
-      bottom: 16px; left: 18px;
-      font-size: 0.7rem;
-      font-family: 'Inter', sans-serif;
-      color: rgba(255,255,255,0.08);
-      pointer-events: none;
-      z-index: 200;
+    .footer-made {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      font-family: 'Tajawal', sans-serif;
     }
 
     /* ===== ERROR ===== */
@@ -781,12 +987,19 @@
 
     /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-      .hero-cards { grid-template-columns: repeat(2, 1fr); }
-      .hero-title { font-size: 2.4rem; }
+      .hero-h1 { font-size: 2.6rem; }
+      .hero-buttons { flex-direction: column; width: 100%; }
+      .hero-buttons a, .hero-buttons button { width: 100%; text-align: center; }
+      .hero-stats { flex-direction: column; gap: 8px; }
+      .hero-stat-divider { display: none; }
+      .how-steps { grid-template-columns: 1fr; text-align: center; }
+      .how-step::before { display: none; }
       .signals-grid { grid-template-columns: 1fr; }
       .findings-grid { grid-template-columns: 1fr; }
       .navbar { padding: 10px 16px; }
       .nav-links a { padding: 4px 10px; font-size: 0.75rem; }
+      .footer-grid { grid-template-columns: 1fr; text-align: center; }
+      .footer-right { text-align: center; }
     }
   </style>
 </head>
@@ -795,8 +1008,8 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <a href="#hero" class="nav-brand">
-      <div class="nav-logo">⚡</div>
-      <span class="nav-title">ZvenDenLabs</span>
+      <div class="nav-logo">✓</div>
+      <span class="nav-title">مثبّت</span>
     </a>
     <ul class="nav-links">
       <li><a href="#tool1">🖼️ كاشف الصور</a></li>
@@ -806,50 +1019,64 @@
     </ul>
   </nav>
 
-  <!-- HERO -->
+  <!-- ===== HERO ===== -->
   <section class="hero" id="hero">
-    <span class="hero-badge">MenaCraft Hackathon 2026 · The Trust Crisis</span>
-    <h1 class="hero-title">ZvenDenLabs</h1>
-    <p class="hero-tagline"><span>تثبّت</span> من كل حاجة</p>
-    <p class="hero-desc">
-      منصّة ذكاء اصطناعي للتحقق من المعلومات — تكشف الصور المزيّفة، تقارن السياق، تحلّل النصوص، وتتثبّت من الأخبار في الوقت الحقيقي.
-    </p>
-    <div class="hero-cards">
-      <a href="#tool1" class="hero-card">
-        <div class="hero-card-icon">🖼️</div>
-        <div class="hero-card-name">كاشف الصور والفيديو</div>
-        <div class="hero-card-en">AI Media Detector</div>
-      </a>
-      <a href="#tool2" class="hero-card">
-        <div class="hero-card-icon">🔗</div>
-        <div class="hero-card-name">محقق التطابق</div>
-        <div class="hero-card-en">Consistency Checker</div>
-      </a>
-      <a href="#tool3" class="hero-card">
-        <div class="hero-card-icon">📝</div>
-        <div class="hero-card-name">كاشف النص</div>
-        <div class="hero-card-en">TruthLens</div>
-      </a>
-      <a href="#tool4" class="hero-card premium">
-        <div class="hero-card-icon">🔍</div>
-        <div class="hero-card-name">مثبّت</div>
-        <div class="hero-card-en">Fact-Checker Agent</div>
-      </a>
+    <div class="hero-ticker">
+      <div class="ticker-track">عاجل: وزير يكشف عن تفاصيل جديدة حول الاتفاقية &nbsp;·&nbsp; صورة تثبت أن الحادثة وقعت في تونس &nbsp;·&nbsp; مصدر موثوق يؤكد إلغاء القرار &nbsp;·&nbsp; انتشار واسع لخبر حول إغلاق المدارس &nbsp;·&nbsp; تسريب وثائق رسمية حول الميزانية الجديدة</div>
+      <div class="ticker-track">خبر عاجل: ارتفاع أسعار المحروقات بداية من الشهر القادم &nbsp;·&nbsp; فيديو يظهر انفجارا في العاصمة &nbsp;·&nbsp; بيان رسمي ينفي الشائعات &nbsp;·&nbsp; مستخدمون يتداولون صورة قديمة على أنها حديثة</div>
+      <div class="ticker-track">ادّعاء: اكتشاف علاج جديد للسرطان &nbsp;·&nbsp; مصادر تكشف عن صفقة سرية &nbsp;·&nbsp; صور مفبركة تنتشر على مواقع التواصل &nbsp;·&nbsp; تحذيرات من موجة حر غير مسبوقة &nbsp;·&nbsp; خبر كاذب حول إلغاء الامتحانات</div>
+      <div class="ticker-track">صورة تثبت أن الحادثة وقعت في تونس &nbsp;·&nbsp; انتشار واسع لخبر حول إغلاق المدارس &nbsp;·&nbsp; عاجل: وزير يكشف عن تفاصيل جديدة &nbsp;·&nbsp; مصدر موثوق يؤكد إلغاء القرار &nbsp;·&nbsp; تسريب وثائق رسمية</div>
+      <div class="ticker-track">مستخدمون يتداولون صورة قديمة على أنها حديثة &nbsp;·&nbsp; بيان رسمي ينفي الشائعات &nbsp;·&nbsp; فيديو يظهر انفجارا في العاصمة &nbsp;·&nbsp; خبر عاجل: ارتفاع أسعار المحروقات</div>
+      <div class="ticker-track">تحذيرات من موجة حر غير مسبوقة &nbsp;·&nbsp; ادّعاء: اكتشاف علاج جديد &nbsp;·&nbsp; مصادر تكشف عن صفقة سرية &nbsp;·&nbsp; صور مفبركة تنتشر على مواقع التواصل &nbsp;·&nbsp; خبر كاذب حول إلغاء الامتحانات</div>
     </div>
-    <div class="scroll-hint">
-      <span>↓ اكتشف الأدوات</span>
+
+    <div class="hero-content">
+      <span class="hero-pill"><span class="hero-pill-dot"></span> مثبّت by ZvenDenLabs</span>
+      <h1 class="hero-h1">زعما صحيحة؟</h1>
+      <p class="hero-sub">منصة التحقق الأولى بالعربي — تحليل الصور والنصوص والأخبار في ثوانٍ، بالذكاء الاصطناعي</p>
+      <div class="hero-buttons">
+        <a href="#tool1" class="btn-primary">ابدأ التحقق ←</a>
+        <a href="#how" class="btn-secondary">كيفاش يشتغل؟</a>
+      </div>
+      <div class="hero-stats">
+        <span class="hero-stat"><strong>٤</strong> أدوات تحقق</span>
+        <span class="hero-stat-divider"></span>
+        <span class="hero-stat"><strong>٣</strong> محاور مغطّاة</span>
+        <span class="hero-stat-divider"></span>
+        <span class="hero-stat">نتائج في <strong>ثوانٍ</strong></span>
+      </div>
     </div>
   </section>
 
-  <div class="divider"></div>
+  <!-- ===== HOW IT WORKS ===== -->
+  <section class="how-section" id="how">
+    <h2 class="how-title">كيفاش يشتغل مثبّت؟</h2>
+    <div class="how-steps">
+      <div class="how-step">
+        <div class="how-step-num">١</div>
+        <div class="how-step-title">اختار الأداة</div>
+        <div class="how-step-desc">صور، نصوص، أو أخبار — كل محتوى وعندو أداتو</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">٢</div>
+        <div class="how-step-title">حط المحتوى</div>
+        <div class="how-step-desc">صورة، نص، أو خبر — بدون تسجيل، بدون تطبيق</div>
+      </div>
+      <div class="how-step">
+        <div class="how-step-num">٣</div>
+        <div class="how-step-title">اعرف الحقيقة</div>
+        <div class="how-step-desc">حكم واضح، نسبة ثقة، ومصادر — في ثوانٍ</div>
+      </div>
+    </div>
+  </section>
 
   <!-- ===== TOOL 1: AI MEDIA DETECTOR ===== -->
   <section class="tool-section" id="tool1">
     <div class="section-header">
       <div class="section-icon">🖼️</div>
       <div>
-        <div class="section-name-ar">كاشف الصور والفيديو</div>
-        <div class="section-name-en">AI Media Detector — Gemini</div>
+        <div class="section-name-ar">كاشف الصور والفيديو <span class="section-badge badge-free">مجاني</span></div>
+        <div class="section-name-en">AI Media Detector</div>
       </div>
     </div>
     <span class="section-axis">Content Authenticity</span>
@@ -900,8 +1127,8 @@
     <div class="section-header">
       <div class="section-icon">🔗</div>
       <div>
-        <div class="section-name-ar">محقق التطابق</div>
-        <div class="section-name-en">Image-Context Consistency Checker — Llama 4 Scout</div>
+        <div class="section-name-ar">محقق التطابق <span class="section-badge badge-free">مجاني</span></div>
+        <div class="section-name-en">Image-Context Consistency Checker</div>
       </div>
     </div>
     <span class="section-axis">Contextual Consistency</span>
@@ -963,8 +1190,8 @@
     <div class="section-header">
       <div class="section-icon">📝</div>
       <div>
-        <div class="section-name-ar">كاشف النص</div>
-        <div class="section-name-en">TruthLens Text Detector — LLaMA 3.3 70B</div>
+        <div class="section-name-ar">كاشف النص <span class="section-badge badge-free">مجاني</span></div>
+        <div class="section-name-en">TruthLens Text Detector</div>
       </div>
     </div>
     <span class="section-axis">Content Authenticity (Text)</span>
@@ -1009,39 +1236,66 @@
   <!-- ===== TOOL 4: MELLE5ER FACT-CHECKER ===== -->
   <section class="tool-section" id="tool4">
     <div class="section-header">
-      <div class="section-icon cyan">🔍</div>
+      <div class="section-icon amber">🔍</div>
       <div>
-        <div class="section-name-ar">مثبّت — Fact-Checker Agent</div>
-        <div class="section-name-en cyan">Real-Time AI Agent · Claude Sonnet</div>
+        <div style="font-size:0.72rem; color:var(--amber); font-family:'Cairo',sans-serif; font-weight:600; margin-bottom:2px;">Premium — وكيل الذكاء الاصطناعي</div>
+        <div class="section-name-ar">مثبّت — Fact-Checker Agent <span class="badge-live"><span class="pulse-dot"></span> وقت حقيقي</span></div>
+        <div class="section-name-en amber">Real-Time AI Agent · Claude Sonnet</div>
       </div>
     </div>
-    <span class="section-axis cyan">Source Credibility + Fact-Checking</span>
+    <span class="section-axis amber">Source Credibility + Fact-Checking</span>
+    <span class="section-badge badge-premium">Premium</span>
 
     <div class="tool-card premium">
       <div class="chat-container" id="chat-container">
         <div class="chat-welcome" id="chat-welcome">
           <div class="chat-welcome-icon">🔍</div>
           <div class="chat-welcome-text">أحكيلي شنوّا تحب نتثبّتلك فيه</div>
-          <div class="chat-welcome-hint">خبر، ادّعاء، رابط، أي حاجة — وأنا نبحث ونجاوبك في الوقت الحقيقي.</div>
+          <div class="chat-welcome-hint">شكّيت في خبر؟ حطّه هنا.</div>
         </div>
       </div>
-      <div id="chat-image-preview" style="display:none; align-items:center; gap:8px; padding:8px 14px; background:var(--bg2); border:1px solid var(--border); border-bottom:none;"></div>
+      <div id="chat-image-preview" style="display:none; align-items:center; gap:8px; padding:8px 14px; background:var(--bg2); border:1px solid rgba(245,158,11,0.1); border-bottom:none;"></div>
       <div class="chat-input-row">
         <input type="file" id="chat-image-input" accept="image/*" style="display:none;" onchange="handleChatImageSelect(event)" />
-        <button onclick="triggerChatImageUpload()" style="padding:10px 14px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; transition:color 0.2s;" onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--text-muted)'" title="أضف صورة">🖼️</button>
-        <input class="chat-input" type="text" id="chat-input" placeholder="اكتب الادّعاء أو الخبر هنا... (أو ألصق صورة Ctrl+V)" onkeydown="if(event.key==='Enter')factCheck()" />
+        <button onclick="triggerChatImageUpload()" style="padding:10px 14px; background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:1.1rem; transition:color 0.2s;" onmouseover="this.style.color='var(--amber)'" onmouseout="this.style.color='var(--text-muted)'" title="أضف صورة">🖼️</button>
+        <input class="chat-input" type="text" id="chat-input" placeholder="وزارة الصحة أعلنت إلغاء التلقيح الإجباري للأطفال" onkeydown="if(event.key==='Enter')factCheck()" />
         <button class="chat-send" id="chat-send" onclick="factCheck()">تثبّت ←</button>
       </div>
     </div>
   </section>
 
-  <!-- FOOTER -->
-  <footer>
-    <strong>ZvenDenLabs ⚡</strong> · MenaCraft Hackathon 2026 · The Trust Crisis
+  <!-- ===== FOOTER ===== -->
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand-name">مثبّت</div>
+        <div class="footer-brand-sub">منصة التحقق الأولى بالعربي</div>
+      </div>
+      <div class="footer-links">
+        <a href="#how">كيفاش يشتغل؟</a>
+        <a href="#tool1">الأدوات</a>
+        <a href="#tool4">تواصل معانا</a>
+      </div>
+      <div class="footer-right">
+        <div class="footer-copy">ZvenDenLabs &copy; 2026</div>
+        <div class="footer-made">بُني في تونس خلال ٢٤ ساعة ❤️</div>
+      </div>
+    </div>
   </footer>
 
-  <div class="watermark">ZvenDenLabs ⚡</div>
-
   <script src="app.js"></script>
+  <script>
+    // Scroll-reveal animation
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 100);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.tool-section').forEach(el => observer.observe(el));
+  </script>
 </body>
 </html>
